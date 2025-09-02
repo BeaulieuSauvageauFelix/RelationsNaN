@@ -83,6 +83,9 @@ namespace RelationsNaN.Controllers
                 return NotFound();
             }
             ViewData["GenreId"] = new SelectList(_context.Genre, "Id", "Name", game.GenreId);
+
+            ViewData["Platforms"] = new SelectList(_context.Platform, "Id", "Name", game.Platforms);
+
             return View(game);
         }
 
@@ -154,6 +157,24 @@ namespace RelationsNaN.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddPlatform(int id, int platformId)
+        {
+            Game? game = await _context.Game.FindAsync(id);
+            Platform? platform = await _context.Platform.FindAsync(platformId);
+
+            if(game == null ||  platform == null)
+            {
+                return NotFound();
+            }
+
+            game.Platforms.Add(platform);
+            await _context.SaveChangesAsync();
+
+            return View("Edit", game);
         }
 
         private bool GameExists(int id)
