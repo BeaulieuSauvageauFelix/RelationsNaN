@@ -77,7 +77,7 @@ namespace RelationsNaN.Controllers
                 return NotFound();
             }
 
-            var game = await _context.Game.FindAsync(id);
+            var game = await _context.Game.Where(x => x.Id == id).Include(x => x.Platforms).SingleAsync();
             if (game == null)
             {
                 return NotFound();
@@ -163,12 +163,21 @@ namespace RelationsNaN.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddPlatform(int id, int platformId)
         {
-            Game? game = await _context.Game.FindAsync(id);
+            Game? game = await _context.Game.Where(x => x.Id == id).Include(x => x.Platforms).SingleAsync();
             Platform? platform = await _context.Platform.FindAsync(platformId);
 
-            if(game == null ||  platform == null)
+            //Placé ici pour être inclut peu importe le retour
+            ViewData["GenreId"] = new SelectList(_context.Genre, "Id", "Name", game.GenreId);
+            ViewData["Platforms"] = new SelectList(_context.Platform, "Id", "Name", game.Platforms);
+
+            if (game == null ||  platform == null)
             {
                 return NotFound();
+            }
+
+            if (game.Platforms.Contains(platform))
+            {
+                return View("Edit", game);
             }
 
             game.Platforms.Add(platform);
