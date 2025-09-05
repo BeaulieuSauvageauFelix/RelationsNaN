@@ -22,7 +22,7 @@ namespace RelationsNaN.Controllers
         // GET: Games
         public async Task<IActionResult> Index()
         {
-            var relationsNaNContext = _context.Game.Include(g => g.Genre);
+            var relationsNaNContext = _context.Game.Include(g => g.Genre).Include(p => p.Platforms);
             return View(await relationsNaNContext.ToListAsync());
         }
 
@@ -183,7 +183,33 @@ namespace RelationsNaN.Controllers
             game.Platforms.Add(platform);
             await _context.SaveChangesAsync();
 
-            return View("Edit", game);
+            return RedirectToAction("Edit", new { id = game.Id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemovePlatform(int id, int platformId)
+        {
+            Game? game = await _context.Game.Where(x => x.Id == id).Include(x => x.Platforms).SingleAsync();
+            Platform? platform = await _context.Platform.FindAsync(platformId);
+
+            ViewData["GenreId"] = new SelectList(_context.Genre, "Id", "Name", game.GenreId);
+            ViewData["Platforms"] = new SelectList(_context.Platform, "Id", "Name", game.Platforms);
+
+            if (game == null || platform == null)
+            {
+                return NotFound() ;
+            }
+
+            if(!game.Platforms.Contains(platform))
+            {
+                return NotFound();
+            }
+
+            game.Platforms.Remove(platform);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Edit", new { id = game.Id });
         }
 
         private bool GameExists(int id)
